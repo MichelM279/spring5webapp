@@ -7,6 +7,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Objects;
 
 class PersonRepositoryMockImplTest {
 
@@ -52,7 +53,7 @@ class PersonRepositoryMockImplTest {
         personMono.map(person -> {
             System.out.println("in map: " + person.toString());
             return person.getFirstName();
-        }).subscribe(firstName ->{
+        }).subscribe(firstName -> {
             System.out.println("from map: " + firstName);
         });
     }
@@ -86,5 +87,44 @@ class PersonRepositoryMockImplTest {
                 System.out.println(person.toString());
             });
         });
+    }
+
+    @Test
+    void testFindPersonById() {
+        Flux<Person> personFlux = personRepository.findAll();
+
+        final Integer id = 3;
+
+        Mono<Person> personMono = personFlux.filter(person -> Objects.equals(person.getId(), id)).next();
+
+        personMono.subscribe(person -> {
+            System.out.println(person.toString());
+        });
+    }
+
+    @Test
+    void testFindPersonByIdNotFound() {
+        Flux<Person> personFlux = personRepository.findAll();
+
+        final Integer id = 8;
+
+        Mono<Person> personMono = personFlux.filter(person -> Objects.equals(person.getId(), id)).next();
+
+        personMono.subscribe(person -> {
+            System.out.println(person.toString());
+        });
+    }
+
+    @Test
+    void testFindPersonByIdNotFoundWithException() {
+        Flux<Person> personFlux = personRepository.findAll();
+
+        final Integer id = 8;
+
+        Mono<Person> personMono = personFlux.filter(person -> Objects.equals(person.getId(), id)).single();
+
+        personMono.doOnError(throwable -> System.out.println("No person found for id: " + id))
+                .onErrorReturn(Person.builder().build())
+                .subscribe(person -> System.out.println(person.toString()));
     }
 }
