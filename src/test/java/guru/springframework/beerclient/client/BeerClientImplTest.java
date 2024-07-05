@@ -14,11 +14,11 @@ class BeerClientImplTest {
     }
 
     @Test
-    void getBeerById() {
+    void listBeers() {
     }
 
     @Test
-    void listBeers() {
+    void getBeerById() {
     }
 
     @Test
