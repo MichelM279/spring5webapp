@@ -5,9 +5,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.Objects;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class PersonRepositoryMockImplTest {
 
@@ -31,9 +34,23 @@ class PersonRepositoryMockImplTest {
     void getByIdSubscribe() {
         Mono<Person> personMono = personRepository.getById(1);
 
+        StepVerifier.create(personMono)
+                .assertNext(person -> {
+                    assertEquals("Michael", person.getFirstName());
+                    assertEquals("Weston", person.getLastName());
+                })
+                .verifyComplete();
+
         personMono.subscribe(person -> {
             System.out.println(person.toString());
         });
+    }
+
+    @Test
+    void getByIdSubscribeNotFound() {
+        Mono<Person> personMono = personRepository.getById(8);
+
+        StepVerifier.create(personMono).expectNextCount(0).verifyComplete();
     }
 
     @Test
@@ -44,6 +61,13 @@ class PersonRepositoryMockImplTest {
             System.out.println("no print");
             return person.getFirstName();
         });
+
+        StepVerifier.create(personMono)
+                .assertNext(person -> {
+                    assertEquals("Michael", person.getFirstName());
+                    assertEquals("Weston", person.getLastName());
+                })
+                .verifyComplete();
     }
 
     @Test
@@ -56,6 +80,13 @@ class PersonRepositoryMockImplTest {
         }).subscribe(firstName -> {
             System.out.println("from map: " + firstName);
         });
+
+        StepVerifier.create(personMono)
+                .assertNext(person -> {
+                    assertEquals("Michael", person.getFirstName());
+                    assertEquals("Weston", person.getLastName());
+                })
+                .verifyComplete();
     }
 
     @Test
@@ -70,6 +101,8 @@ class PersonRepositoryMockImplTest {
     @Test
     void testFluxSubscribe() {
         Flux<Person> personFlux = personRepository.findAll();
+
+        StepVerifier.create(personFlux).expectNextCount(4).verifyComplete();
 
         personFlux.subscribe(person -> {
             System.out.println(person.toString());
@@ -114,6 +147,10 @@ class PersonRepositoryMockImplTest {
             System.out.println(person.toString());
         });
     }
+
+
+
+
 
     @Test
     void testFindPersonByIdNotFoundWithException() {
