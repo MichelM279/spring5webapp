@@ -3,6 +3,7 @@ package guru.springframework.beerclient.client;
 import guru.springframework.beerclient.config.WebClientConfig;
 import guru.springframework.beerclient.model.BeerDto;
 import guru.springframework.beerclient.model.BeerPagedList;
+import org.assertj.core.api.AtomicReferenceArrayAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,8 @@ import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class BeerClientImplTest {
 
     private BeerClient beerClient;
+
+    private static String  MY_BEER_NAME = "its very good";
 
     @BeforeEach
     void setUp() {
@@ -85,7 +90,7 @@ class BeerClientImplTest {
         BeerPagedList pagedList = beerPagedListMono.block();
         BeerDto beerDto = pagedList.getContent().get(0);
         BeerDto updatedBeer = BeerDto.builder()
-                .beerName("its very good")
+                .beerName(MY_BEER_NAME)
                 .beerStyle(beerDto.getBeerStyle())
                 .price(beerDto.getPrice())
                 .upc(beerDto.getUpc()
@@ -144,5 +149,26 @@ class BeerClientImplTest {
         Mono<BeerDto> beerDtoMono = beerClient.getBeerByUPC(upc);
 
         assertThat(beerDtoMono.block()).isNotNull();
+    }
+
+    @Test
+    void functionalTestGetBeerById() throws InterruptedException {
+        AtomicReference<String> beerName = new AtomicReference<>();
+        CountDownLatch countDownLatch = new CountDownLatch(1); // Expecting 1 instance
+
+        beerClient.listBeers(null, null, null, null, null)
+                .map(beerPagedList -> beerPagedList.getContent().get(0).getId())
+                .map(beerId -> beerClient.getBeerById(beerId, false))
+                .flatMap(mono -> mono)
+                .subscribe(beerDto -> {
+                    System.out.println(beerDto.getBeerName());
+                    beerName.set(beerDto.getBeerName());
+                    assertThat(beerDto.getBeerName()).isEqualTo(MY_BEER_NAME); // doesnt work here, race condition
+                    countDownLatch.countDown(); // last position, or race condition to below assertthat
+                });
+
+        // Thread.sleep(5000); // dont to, instead countdownlatch
+        countDownLatch.await(); // usage mainly for tests
+        assertThat(beerName.get()).isEqualTo(MY_BEER_NAME);
     }
 }
