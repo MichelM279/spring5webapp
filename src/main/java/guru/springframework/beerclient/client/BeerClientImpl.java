@@ -1,5 +1,6 @@
 package guru.springframework.beerclient.client;
 
+import guru.springframework.beerclient.config.WebClientProperties;
 import guru.springframework.beerclient.model.BeerDto;
 import guru.springframework.beerclient.model.BeerPagedList;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,10 @@ public class BeerClientImpl implements BeerClient {
 
     @Override
     public Mono<BeerPagedList> listBeers(Integer pageNumber, Integer pageSize, String beerName, String beerStyle, Boolean showInventoryOnhand) {
-        return null;
+        return webClient.get()
+                .uri(WebClientProperties.BEER_V1_PATH)
+                .retrieve()
+                .bodyToMono(BeerPagedList.class);
     }
 
     @Override
