@@ -1,10 +1,13 @@
 package guru.springframework.beerclient.client;
 
 import guru.springframework.beerclient.config.WebClientConfig;
+import guru.springframework.beerclient.model.BeerDto;
 import guru.springframework.beerclient.model.BeerPagedList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -48,6 +51,12 @@ class BeerClientImplTest {
 
     @Test
     void getBeerById() {
+        Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(null, null, null, null, null);
+        UUID id =beerPagedListMono.block().stream().findFirst().get().getId();
+
+        Mono<BeerDto> beerDtoMono = beerClient.getBeerById(id, null);
+
+        assertThat(beerDtoMono.block()).isNotNull();
     }
 
     @Test
@@ -64,5 +73,11 @@ class BeerClientImplTest {
 
     @Test
     void getBeerByUPC() {
+        Mono<BeerPagedList> beerPagedListMono = beerClient.listBeers(null, null, null, null, null);
+        String upc =beerPagedListMono.block().stream().findFirst().get().getUpc();
+
+        Mono<BeerDto> beerDtoMono = beerClient.getBeerByUPC(upc);
+
+        assertThat(beerDtoMono.block()).isNotNull();
     }
 }
